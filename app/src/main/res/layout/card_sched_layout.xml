@@ -27,7 +27,6 @@
                 android:layout_weight="3">
 
                 <ImageView
-                    android:id="@+id/ivWorkoutIcon"
                     android:layout_width="75dp"
                     android:layout_height="75dp"
                     android:layout_centerInParent="true"
@@ -37,7 +36,7 @@
                     app:tint="@color/blue"/>
 
                 <TextView
-                    android:id="@+id/tvWorkoutRep"
+                    android:id="@+id/tvBusNo"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerInParent="true"

@@ -9,70 +9,98 @@ import android.widget.ArrayAdapter
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import java.util.Calendar
 
 class MainActivity : AppCompatActivity() {
+
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var scheduleAdapter: ScheduleAdapter
+    private lateinit var databaseHelper: DatabaseHelper
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        //define vars
-        //textview
+        databaseHelper = DatabaseHelper(this)
+        recyclerView = findViewById(R.id.recyclerView)
         val timeSelector: TextView = findViewById(R.id.tvTimeSelector)
-        //spinner
         val spinFrom: Spinner = findViewById(R.id.spinFrom)
         val spinTo: Spinner = findViewById(R.id.spinTo)
-        //button
         val btnSearch: MaterialButton = findViewById(R.id.btnSearch)
-        //sample loc data
         val locations = arrayOf("Shuwaikh", "Shadadiyyah", "Kaifan")
 
-
-        //bind spinner with adapter
-        //array adapter with default spinner layout
-        val adapterFrom = ArrayAdapter(this,R.layout.spinner_item, locations)
-        val adapterTo = ArrayAdapter(this,R.layout.spinner_item, locations)
-        //layout when choices appear
+        val adapterFrom = ArrayAdapter(this, R.layout.spinner_item, locations)
+        val adapterTo = ArrayAdapter(this, R.layout.spinner_item, locations)
         adapterFrom.setDropDownViewResource(R.layout.spinner_item)
         adapterTo.setDropDownViewResource(R.layout.spinner_item)
-        //apply adapter to spinner
         spinFrom.adapter = adapterFrom
         spinTo.adapter = adapterTo
 
-        //set textview to current time
-        // Set default time to current time
         val calendar = Calendar.getInstance()
         val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
         val currentMinute = calendar.get(Calendar.MINUTE)
         updateTimeText(timeSelector, currentHour, currentMinute)
 
-        //time picker when time selector clicked
-        timeSelector.setOnClickListener(){
-            TimePickerDialog(this,{_, hourOfDay, minute -> updateTimeText(timeSelector, hourOfDay, minute)}, currentHour, currentMinute, true).show()
+        insertTestSchedules(databaseHelper)
+
+        timeSelector.setOnClickListener {
+            TimePickerDialog(this, { _, hourOfDay, minute -> updateTimeText(timeSelector, hourOfDay, minute) }, currentHour, currentMinute, true).show()
         }
 
-        //search button
-        btnSearch.setOnClickListener(){
-            // Retrieve the selected values from the Spinners
+        btnSearch.setOnClickListener {
             val to = spinTo.selectedItem.toString()
             val from = spinFrom.selectedItem.toString()
             val time = timeSelector.text.toString()
 
-            // Validate input data
             if (TextUtils.isEmpty(to) || TextUtils.isEmpty(from) || TextUtils.isEmpty(time)) {
                 Toast.makeText(this@MainActivity, "Please fill in all fields", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            // Print values in the logs
-            Log.d("MainActivity", "To: $to, From: $from, Time: $time")
-        }
 
+            Log.d("MainActivity", "To: $to, From: $from, Time: $time")
+
+
+            recyclerView.layoutManager = LinearLayoutManager(this)
+
+            val schedules = databaseHelper.getAllSchedules()
+            scheduleAdapter = ScheduleAdapter(schedules, time)
+            recyclerView.adapter = scheduleAdapter
+        }
     }
 
-    //function to set time to text view
     private fun updateTimeText(textView: TextView, hour: Int, minute: Int) {
         val formattedTime = String.format("%02d:%02d", hour, minute)
         textView.text = formattedTime
+    }
+
+    fun insertTestSchedules(dbHelper: DatabaseHelper) {
+        val testSchedules = listOf(
+            Schedule(0, "88", "05:00", "Shuwaikh", "Shadadiyyah", 30, true),
+            Schedule(0, "88", "06:00", "Shadadiyyah", "Kaifan", 20, true),
+            Schedule(0, "89", "07:00", "Kaifan", "Shuwaikh", 25, true),
+            Schedule(0, "90", "08:00", "Shuwaikh", "Kaifan", 15, true),
+            Schedule(0, "91", "09:00", "Shadadiyyah", "Shuwaikh", 40, true),
+            Schedule(0, "92", "10:00", "Kaifan", "Shadadiyyah", 35, true),
+            Schedule(0, "93", "11:00", "Shuwaikh", "Kaifan", 50, true),
+            Schedule(0, "94", "12:00", "Shadadiyyah", "Kaifan", 20, true),
+            Schedule(0, "95", "13:00", "Kaifan", "Shuwaikh", 25, true),
+            Schedule(0, "96", "14:00", "Shuwaikh", "Shadadiyyah", 30, true),
+            Schedule(0, "97", "15:00", "Shadadiyyah", "Kaifan", 20, true),
+            Schedule(0, "98", "16:00", "Kaifan", "Shuwaikh", 25, true),
+            Schedule(0, "99", "17:00", "Shuwaikh", "Kaifan", 15, true),
+            Schedule(0, "100", "18:00", "Shadadiyyah", "Shuwaikh", 40, true),
+            Schedule(0, "101", "19:00", "Kaifan", "Shadadiyyah", 35, true),
+            Schedule(0, "102", "20:00", "Shuwaikh", "Kaifan", 50, true),
+            Schedule(0, "103", "21:00", "Shadadiyyah", "Kaifan", 20, true),
+            Schedule(0, "104", "22:00", "Kaifan", "Shuwaikh", 25, true),
+            Schedule(0, "105", "23:00", "Shuwaikh", "Shadadiyyah", 30, true),
+            Schedule(0, "106", "00:00", "Shadadiyyah", "Kaifan", 20, true)
+        )
+        testSchedules.forEach { schedule ->
+            dbHelper.insertSchedule(schedule)
+        }
     }
 }
