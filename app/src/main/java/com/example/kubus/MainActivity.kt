@@ -1,6 +1,8 @@
 package com.example.kubus
 
 import android.app.TimePickerDialog
+import android.content.Context
+import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.TextUtils
@@ -14,17 +16,24 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import java.util.Calendar
 
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var scheduleAdapter: ScheduleAdapter
     private lateinit var databaseHelper: DatabaseHelper
 
+    companion object {
+        private const val PREFS_NAME = "AppPreferences"
+        private const val KEY_FIRST_RUN = "firstRun"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         databaseHelper = DatabaseHelper(this)
+        val sharedPreferences: SharedPreferences = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         recyclerView = findViewById(R.id.recyclerView)
         val timeSelector: TextView = findViewById(R.id.tvTimeSelector)
         val spinFrom: Spinner = findViewById(R.id.spinFrom)
@@ -44,7 +53,12 @@ class MainActivity : AppCompatActivity() {
         val currentMinute = calendar.get(Calendar.MINUTE)
         updateTimeText(timeSelector, currentHour, currentMinute)
 
-        insertTestSchedules(databaseHelper)
+        if (sharedPreferences.getBoolean(KEY_FIRST_RUN, true)) {
+            if (!databaseHelper.isTestDataInserted()) {
+                insertTestSchedules(databaseHelper)
+            }
+            sharedPreferences.edit().putBoolean(KEY_FIRST_RUN, false).apply()
+        }
 
         timeSelector.setOnClickListener {
             TimePickerDialog(this, { _, hourOfDay, minute -> updateTimeText(timeSelector, hourOfDay, minute) }, currentHour, currentMinute, true).show()
@@ -66,7 +80,7 @@ class MainActivity : AppCompatActivity() {
             recyclerView.layoutManager = LinearLayoutManager(this)
 
             val schedules = databaseHelper.getAllSchedules()
-            scheduleAdapter = ScheduleAdapter(schedules, time)
+            scheduleAdapter = ScheduleAdapter(schedules, time, from, to)
             recyclerView.adapter = scheduleAdapter
         }
     }
@@ -77,28 +91,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun insertTestSchedules(dbHelper: DatabaseHelper) {
-        val testSchedules = listOf(
-            Schedule(0, "88", "05:00", "Shuwaikh", "Shadadiyyah", 30, true),
-            Schedule(0, "88", "06:00", "Shadadiyyah", "Kaifan", 20, true),
-            Schedule(0, "89", "07:00", "Kaifan", "Shuwaikh", 25, true),
-            Schedule(0, "90", "08:00", "Shuwaikh", "Kaifan", 15, true),
-            Schedule(0, "91", "09:00", "Shadadiyyah", "Shuwaikh", 40, true),
-            Schedule(0, "92", "10:00", "Kaifan", "Shadadiyyah", 35, true),
-            Schedule(0, "93", "11:00", "Shuwaikh", "Kaifan", 50, true),
-            Schedule(0, "94", "12:00", "Shadadiyyah", "Kaifan", 20, true),
-            Schedule(0, "95", "13:00", "Kaifan", "Shuwaikh", 25, true),
-            Schedule(0, "96", "14:00", "Shuwaikh", "Shadadiyyah", 30, true),
-            Schedule(0, "97", "15:00", "Shadadiyyah", "Kaifan", 20, true),
-            Schedule(0, "98", "16:00", "Kaifan", "Shuwaikh", 25, true),
-            Schedule(0, "99", "17:00", "Shuwaikh", "Kaifan", 15, true),
-            Schedule(0, "100", "18:00", "Shadadiyyah", "Shuwaikh", 40, true),
-            Schedule(0, "101", "19:00", "Kaifan", "Shadadiyyah", 35, true),
-            Schedule(0, "102", "20:00", "Shuwaikh", "Kaifan", 50, true),
-            Schedule(0, "103", "21:00", "Shadadiyyah", "Kaifan", 20, true),
-            Schedule(0, "104", "22:00", "Kaifan", "Shuwaikh", 25, true),
-            Schedule(0, "105", "23:00", "Shuwaikh", "Shadadiyyah", 30, true),
-            Schedule(0, "106", "00:00", "Shadadiyyah", "Kaifan", 20, true)
-        )
+        val testSchedules = schedules
+
         testSchedules.forEach { schedule ->
             dbHelper.insertSchedule(schedule)
         }

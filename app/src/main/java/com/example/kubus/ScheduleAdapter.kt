@@ -8,9 +8,19 @@ import androidx.recyclerview.widget.RecyclerView
 import java.text.SimpleDateFormat
 import java.util.*
 
-class ScheduleAdapter(private val scheduleList: List<Schedule>, private val initialTime: String) : RecyclerView.Adapter<ScheduleAdapter.ScheduleViewHolder>() {
+class ScheduleAdapter(
+    private val scheduleList: List<Schedule>,
+    private val initialTime: String,
+    private val origin: String,
+    private val dest: String
+) : RecyclerView.Adapter<ScheduleAdapter.ScheduleViewHolder>() {
 
-    private val filteredScheduleList: List<Schedule> = scheduleList.filter { it.sStatus && isBusComingAfterSelectedTime(it.sTime) }
+    private val filteredScheduleList: List<Schedule> = scheduleList.filter {
+        it.sStatus && isBusComingAfterSelectedTime(it.sTime) && it.sOrigin == origin && it.sDest == dest
+    }.sortedBy {
+        val etdTime = SimpleDateFormat("HH:mm", Locale.getDefault()).parse(it.sTime)!!
+        etdTime.time
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ScheduleViewHolder {
         val itemView = LayoutInflater.from(parent.context).inflate(R.layout.card_sched_layout, parent, false)
